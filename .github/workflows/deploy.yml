@@ -1,0 +1,126 @@
+name: Deploy
+
+# Two paths:
+#   - Any PR into main: plan-only, so a reviewer can see what would change -
+#     never applies, never touches Amplify (uses the same OIDC role, but the
+#     role's trust policy lets any ref in this repo assume it - this job just
+#     never runs `apply`, so a PR from a fork still can't mutate anything).
+#   - A push to main: build the Lambda layer, terraform apply, then deploy
+#     the static frontend to Amplify (manual zip upload - there is no
+#     Amplify-native git connection in this project).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # required for OIDC -> AWS role assumption
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-2
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Lambda layer
+        run: python3 build/build_layer.py
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.9"
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform plan
+        working-directory: terraform
+        run: terraform plan -input=false -var="aws_profile=default"
+
+  deploy:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Lambda layer
+        run: python3 build/build_layer.py
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.9"
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform apply
+        working-directory: terraform
+        # aws_profile defaults to "default" in variables.tf, which is fine
+        # here: the "aws" provider block only uses var.aws_profile to pick a
+        # *named CLI profile*, and configure-aws-credentials above already
+        # exported the OIDC-derived credentials as plain AWS_* env vars,
+        # which every AWS SDK (including the provider) prefers over a named
+        # profile when both are present.
+        run: terraform apply -input=false -auto-approve -var="aws_profile=default"
+
+      - name: Wire the API URL into the frontend
+        working-directory: terraform
+        run: |
+          API_URL=$(terraform output -raw menu_api_invoke_url)
+          echo "window.API_BASE_URL = \"${API_URL%/}\";" > ../app/static/config.js
+          cat ../app/static/config.js
+
+      - name: Deploy frontend to Amplify
+        working-directory: terraform
+        run: |
+          set -euo pipefail
+          APP_ID=$(terraform output -raw amplify_app_id)
+
+          cd ../app/static
+          zip -r /tmp/frontend.zip . -x ".*"
+
+          RESP=$(aws amplify create-deployment --app-id "$APP_ID" --branch-name main)
+          UPLOAD_URL=$(echo "$RESP" | python3 -c "import json,sys;print(json.load(sys.stdin)['zipUploadUrl'])")
+          JOB_ID=$(echo "$RESP" | python3 -c "import json,sys;print(json.load(sys.stdin)['jobId'])")
+
+          curl -sf -X PUT "$UPLOAD_URL" --data-binary @/tmp/frontend.zip -H "Content-Type: application/zip"
+          aws amplify start-deployment --app-id "$APP_ID" --branch-name main --job-id "$JOB_ID"
+
+          for i in $(seq 1 30); do
+            STATUS=$(aws amplify get-job --app-id "$APP_ID" --branch-name main --job-id "$JOB_ID" --query "job.summary.status" --output text)
+            echo "Amplify deployment status: $STATUS"
+            if [ "$STATUS" = "SUCCEED" ]; then exit 0; fi
+            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "CANCELLED" ]; then exit 1; fi
+            sleep 10
+          done
+          echo "Timed out waiting for Amplify deployment"
+          exit 1
+
+      - name: Print the live frontend URL
+        working-directory: terraform
+        run: terraform output frontend_url

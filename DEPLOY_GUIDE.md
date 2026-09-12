@@ -7,6 +7,22 @@ is no EC2, no Beanstalk, and no Cognito (the app never actually consumed the
 Cognito scaffolding in the original build, so it was dropped rather than
 carried forward unused).
 
+## CI/CD (`.github/workflows/deploy.yml`)
+
+- **Any PR into `main`**: plan-only (`terraform plan`), never applies, never touches Amplify.
+- **A push to `main`**: builds the Lambda layer, `terraform apply`s the whole stack, then deploys `app/static/*` to Amplify (manual zip upload - see step 3 below for why).
+
+Authentication is GitHub OIDC -> a scoped IAM role (`terraform/github_oidc.tf`, `aws_iam_role.github_actions_deploy`) - **no AWS access key is stored in GitHub at all**. Trust is restricted to this exact repo (`var.github_repo`); a workflow run from anywhere else can never assume the role.
+
+**One-time setup after the repo exists on GitHub:**
+1. `terraform output github_actions_role_arn` (from a local `apply`, already run once to create the role - see `terraform/github_oidc.tf`).
+2. In the GitHub repo settings -> Secrets and variables -> Actions, add a repository secret named `AWS_ROLE_ARN` with that value.
+3. Terraform's remote state (S3 + DynamoDB lock, see below) means the CI run and your local runs never fight over or diverge from each other's state.
+
+## Remote state (S3 + DynamoDB lock)
+
+State lives in S3 (`terraform/providers.tf`'s `backend "s3"` block), with a DynamoDB table guarding concurrent applies. Both were created once, outside the main stack's own state, by `terraform/bootstrap/` (see that file's comment for why a backend's own storage can't sanely live in the state it stores). You should not need to touch `terraform/bootstrap/` again unless the bucket/table themselves need to change.
+
 ## Architecture
 
 | Layer | Service |

@@ -3,14 +3,21 @@ app/__pycache__/
 app/**/__pycache__/
 *.pyc
 
-terraform/.terraform/
-terraform/.terraform.lock.hcl
-terraform/terraform.tfstate
-terraform/terraform.tfstate.backup
+.terraform/
+**/.terraform/
+.terraform.lock.hcl
+**/.terraform.lock.hcl
+# Terraform state can contain plaintext resource attributes (never commit it,
+# anywhere in this repo - the main stack, terraform/bootstrap/, or any future
+# module). Matched recursively, not just at terraform/'s own top level.
+*.tfstate
+*.tfstate.*
+**/*.tfstate
+**/*.tfstate.*
 terraform/terraform.tfvars
+**/tfplan
+**/*.tfplan
 terraform/build/
-terraform/*.tfplan
-terraform/tfplan
 
 /tmp/allergen_local_db.json
 /tmp/allergen_uploads/

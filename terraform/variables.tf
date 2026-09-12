@@ -19,7 +19,7 @@ variable "environment" {
 variable "bedrock_model_id" {
   description = "Bedrock model ID used for allergen extraction + translation. Verify access/availability for this exact id in var.aws_region via `aws bedrock list-foundation-models` - cross-region inference profile ids are region-prefixed (e.g. apac./us./eu.)."
   type        = string
-  default     = "apac.anthropic.claude-haiku-4-5-20251001-v1:0"
+  default     = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 }
 
 variable "create_knowledge_base" {

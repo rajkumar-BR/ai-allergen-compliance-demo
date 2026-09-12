@@ -14,16 +14,32 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
 
-  # Local state by default so `terraform destroy` has zero extra
-  # dependencies for this demo. For a real multi-person team, uncomment
-  # and point this at an S3 backend + DynamoDB lock table instead.
-  # backend "s3" {
-  #   bucket = "your-tfstate-bucket"
-  #   key    = "ai-allergen-compliance-demo/terraform.tfstate"
-  #   region = "ap-southeast-2"
-  # }
+  # Remote state in S3 + DynamoDB state locking, so CI (see
+  # .github/workflows/deploy.yml) and any teammate share one source of truth
+  # and can never corrupt it with a concurrent apply. The bucket + lock table
+  # are provisioned once by terraform/bootstrap/ (its own tiny, separate root
+  # module/state - see that file for why) and never destroyed alongside this
+  # stack.
+  # The backend block cannot read var.aws_profile (backend config must be
+  # static values - Terraform parses it before any variables are available),
+  # and deliberately has no hardcoded "profile" here either, so it works
+  # unchanged for anyone: it falls back to the standard AWS credential chain
+  # (AWS_PROFILE / AWS_ACCESS_KEY_ID+AWS_SECRET_ACCESS_KEY env vars, or the
+  # "default" profile) - set AWS_PROFILE in your shell (or GitHub Actions
+  # secrets - see .github/workflows/deploy.yml) rather than editing this file.
+  backend "s3" {
+    bucket         = "ai-allergen-compliance-demo-tfstate-669232219904"
+    key            = "ai-allergen-compliance-demo/terraform.tfstate"
+    region         = "ap-southeast-2"
+    dynamodb_table = "ai-allergen-compliance-demo-tf-lock"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
