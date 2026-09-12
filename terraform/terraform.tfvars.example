@@ -1,0 +1,13 @@
+# Copy this file to terraform.tfvars and adjust as needed, then run
+# terraform init && terraform apply
+
+aws_region       = "ap-southeast-2"
+aws_profile      = "default"
+project_name     = "ai-allergen-compliance-demo"
+environment      = "dev"
+bedrock_model_id = "apac.anthropic.claude-haiku-4-5-20251001-v1:0"
+
+# Initial admin login password (services/auth_service.py). Change it
+# afterwards via the app's own "Change Password" admin action, not by
+# re-editing this file.
+app_admin_initial_password = "admin"

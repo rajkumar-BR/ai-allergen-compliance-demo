@@ -1,0 +1,432 @@
+:root {
+  --teal-deep: #1f5d52;
+  --teal-mist: #dceae5;
+  --teal-mist-2: #eef5f2;
+  --cream: #faf6ec;
+  --paper: #ffffff;
+  --ink: #1c2b27;
+  --muted: #6e7d78;
+  --border: #e3e0d3;
+  --amber: #c97a2e;
+  --amber-bg: #f7e6d2;
+  --sage: #3f7d4d;
+  --sage-bg: #e2efe0;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(28, 43, 39, 0.04), 0 8px 24px rgba(28, 43, 39, 0.06);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .brand-title {
+  font-family: "Fraunces", Georgia, serif;
+}
+
+/* ---------- header ---------- */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--paper);
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.kiwi-mark {
+  width: 38px;
+  height: 38px;
+  color: var(--teal-deep);
+  flex-shrink: 0;
+}
+.brand-title { font-weight: 600; font-size: 21px; color: var(--teal-deep); line-height: 1.1; }
+.brand-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+.lang-picker { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.lang-picker select {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--paper);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+/* ---------- AI strip ---------- */
+.ai-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--teal-deep);
+  color: #eef7f4;
+  font-size: 13px;
+  padding: 10px 28px;
+}
+.ai-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7fe0c4;
+  flex-shrink: 0;
+  animation: pulse 2.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(127,224,196,0.5); }
+  50% { opacity: 0.6; box-shadow: 0 0 0 5px rgba(127,224,196,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-dot { animation: none; }
+}
+
+/* ---------- layout ---------- */
+.layout {
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  gap: 22px;
+  padding: 24px 28px 60px;
+  align-items: start;
+
+}
+
+/* Logged-out (no Management panel): collapse to a single column so the page
+   doesn't reserve an empty 360px left gutter. Toggled from app.js. */
+.layout.single-column { grid-template-columns: 1fr; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; padding: 18px; }
+}
+
+.panel h2 { font-size: 19px; color: var(--teal-deep); margin: 4px 0 14px; font-weight: 600; }
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card-eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal-deep);
+  background: var(--teal-mist);
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+.card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+.muted { color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+
+input[type="text"], input[type="file"], textarea {
+  width: 100%;
+  padding: 9px 10px;
+  margin: 6px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--cream);
+}
+input[type="text"]:focus, textarea:focus {
+  outline: 2px solid var(--teal-deep);
+  outline-offset: 1px;
+}
+
+.btn {
+  background: var(--paper);
+  border: 1.5px solid var(--teal-deep);
+  color: var(--teal-deep);
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+  font-family: inherit;
+  transition: background 0.12s, transform 0.08s;
+}
+.btn:hover { background: var(--teal-mist-2); }
+.btn:active { transform: scale(0.98); }
+.btn:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
+.btn.primary { background: var(--teal-deep); color: #fff; }
+.btn.primary:hover { background: #17473f; }
+.btn.small { padding: 6px 12px; font-size: 12px; margin-top: 0; }
+.btn.danger { border-color: #a33a2b; color: #a33a2b; }
+.btn.danger:hover { background: #fbe9e6; }
+
+.status-line { font-size: 12.5px; margin-top: 10px; color: var(--teal-deep); min-height: 16px; font-weight: 500; }
+.progress-list { font-size: 12.5px; margin-top: 10px; color: var(--muted); }
+.progress-list div { padding: 2px 0; }
+
+.reference-card { background: var(--teal-mist-2); border-color: var(--teal-mist); }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--paper);
+  color: var(--teal-deep);
+  border-radius: 999px;
+  padding: 4px 11px 4px 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+}
+.chip.warn { background: var(--amber-bg); color: var(--amber); border-color: #ecd2b0; }
+.chip.diet { background: var(--sage-bg); color: var(--sage); border-color: #c9e3c7; }
+
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.65);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ---------- right panel ---------- */
+.preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.preview-sub { margin: 2px 0 0; }
+.filters { display: flex; gap: 14px; font-size: 13px; color: var(--ink); }
+.filters label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.preview-actions { display: flex; gap: 8px; }
+
+.dish-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+}
+.dish-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow .15s, transform .15s, border-color .15s;
+}
+.dish-card:hover {
+  box-shadow: 0 6px 20px rgba(31, 93, 82, 0.12);
+  border-color: var(--teal-mist);
+  transform: translateY(-2px);
+}
+.dish-card:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
+.dish-card h4 { margin: 0 0 4px; font-size: 15.5px; font-weight: 600; font-family: "Fraunces", Georgia, serif; }
+.dish-card .translated-name { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.02em; }
+.dish-card p { font-size: 12.5px; color: var(--muted); margin: 6px 0; line-height: 1.5; }
+.dish-card .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.dish-card .status-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin-top: 10px;
+  display: block;
+}
+
+.allergen-status {
+  background: var(--teal-mist-2);
+  border-color: var(--teal-mist);
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.allergen-status-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--teal-deep);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.allergen-status strong { color: var(--teal-deep); font-size: 13.5px; }
+
+/* ---------- modal ---------- */
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(28, 43, 39, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 20;
+  padding: 20px;
+}
+.modal.hidden { display: none; }
+.hidden { display: none !important; }
+.modal-content {
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 480px;
+  max-width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(28,43,39,0.25);
+}
+.modal-close {
+  position: absolute; top: 12px; right: 16px;
+  background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted);
+}
+.modal h3 { font-size: 18px; margin: 0 24px 14px 0; }
+.modal label { display: block; font-size: 12.5px; margin: 12px 0 6px; font-weight: 600; color: var(--ink); }
+.modal .allergen-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12.5px; }
+.modal .allergen-checks label { font-weight: 400; margin: 0; display: flex; align-items: center; gap: 6px; }
+.modal-actions { margin-top: 16px; display: flex; gap: 8px; }
+
+/* ---------- cafe picker screen ---------- */
+/* #cafePickerScreen / #cafePicker are found by app.js — IDs unchanged. */
+#cafePickerScreen {
+  /* Full-bleed dark restaurant-interior backdrop. The element fills the
+     viewport and centers its content; the readable 640px column is kept via
+     the children below (max-width on h2/#cafePicker) rather than on this
+     layer, so the image covers the whole screen, not just a narrow band. */
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+  text-align: center;
+  background-image: url('https://images.unsplash.com/photo-1522336572468-97b06e8ef143?fm=jpg&q=60&w=3000&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+}
+/* Semi-transparent dark overlay so the light text stays readable against the
+   dark photo. Sits behind the content (z-index: 0); content is lifted above. */
+#cafePickerScreen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+}
+#cafePickerScreen h2 {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  font-size: 28px;
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  margin: 0 0 24px;
+}
+#cafePickerScreen #cafePicker {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  justify-content: center;
+}
+/* Cafe buttons: the base Bootstrap outline-secondary is dark-on-transparent
+   and disappears against the photo, so give them a light, legible treatment
+   scoped to this screen only (does not affect buttons elsewhere). */
+#cafePickerScreen #cafePicker .btn {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.92);
+}
+#cafePickerScreen #cafePicker .btn:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+/* ---------- responsive polish ---------- */
+/* Header keeps its custom flex layout on desktop; below we let it wrap
+   and stack its groups so it never crams on tablet/phone. Every ID and
+   inline onclick handler stays exactly where it was in the markup. */
+
+/* Tablet and below (~768px): allow the topbar to wrap onto multiple rows. */
+@media (max-width: 768px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    padding: 16px 20px;
+  }
+  .brand { flex: 1 1 100%; }
+  .lang-picker { flex: 1 1 auto; }
+
+  #cafePickerScreen { padding: 40px 20px; }
+}
+
+/* Phone (~375px): stack the header controls full-width and make primary
+   action buttons and the modal comfortable with no horizontal scroll. */
+@media (max-width: 480px) {
+  .topbar {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+  .lang-picker {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+  .lang-picker select { flex: 1 1 auto; width: 100%; }
+
+  /* header buttons (Change cafe / Login as Admin) go full-width and stack */
+  .topbar > .btn {
+    flex: 1 1 100%;
+    width: 100%;
+    margin-top: 0;
+    text-align: center;
+  }
+
+  .layout { padding: 14px; }
+
+  .preview-header { gap: 12px; }
+  .filters { gap: 10px 14px; flex-wrap: wrap; }
+
+  /* modal: fill the screen width comfortably and stack its actions */
+  .modal { padding: 12px; }
+  .modal-content { padding: 18px; }
+  .modal .allergen-checks { grid-template-columns: 1fr; }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions .btn { flex: 1 1 100%; width: 100%; }
+}
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+.empty-state h4 {
+  margin-bottom: 6px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ccc;
+  border-top-color: #2f6f4f;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-line { color: #c0392b; }

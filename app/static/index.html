@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Kiwi Cafe - AI Allergen & Menu Translation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+  integrity="sha256-PI8n5gCcz9cQqQXm3PEtDuPG8qx9oFsFctPg0S5zb8g="
+  crossorigin="anonymous">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- NEW: cafe picker screen, shown first, before anything else -->
+  <div id="cafePickerScreen">
+    <h2>Welcome! Please select your cafe</h2>
+    <div id="cafePicker" class="chip-row"></div>
+  </div>
+
+  <!-- NEW: everything below is hidden until a cafe is picked -->
+  <div id="mainApp" class="hidden">
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="kiwi-mark" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M46 30c6-1 11-6 12-12-6 0-11 3-14 8-2-4-6-7-11-8 1 5 4 9 8 11-7-1-14 2-18 8 6 2 12 1 17-3-1 3-1 6 0 9-8 1-15 6-18 13 8 2 16-1 21-7 1 3 3 5 6 6-2 6-8 10-15 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="43" cy="24" r="1.6" fill="currentColor"/>
+      </svg>
+      <div>
+        <div class="brand-title">The Kiwi Cafe</div>
+        <div class="brand-sub">AI Allergen &amp; Translation Demo</div>
+      </div>
+    </div>
+    <div class="lang-picker">
+      <label for="langSelect">Display language</label>
+      <select id="langSelect">
+        <option value="en">🇬🇧 English (source)</option>
+        <option value="es">🇪🇸 Spanish</option>
+        <option value="de">🇩🇪 German</option>
+        <option value="ja">🇯🇵 Japanese</option>
+        <option value="zh">🇨🇳 Mandarin (Simplified)</option>
+      </select>
+    </div>
+    <!-- login button for the admin -->
+         <button class="btn btn-outline-secondary" onclick="backToCafePicker()"> Change cafe</button>
+         <button class="btn btn-outline-dark" id="adminAuthBtn" onclick="handleAuthClick()">Login as Admin</button>
+         <button class="btn btn-outline-secondary admin-only hidden" id="changePasswordBtn" onclick="changePassword()">Change Password</button>
+  </header>
+
+  <!-- <div class="ai-strip">
+    <span class="ai-dot" aria-hidden="true"></span>
+    Every dish below is read, checked and translated live by Bedrock the moment it's added — nothing here is pre-written.
+  </div> -->
+
+  <main class="layout">
+    <!-- LEFT PANEL: Management & Upload (NEW: hidden until admin logs in) -->
+    <section class="panel left-panel hidden" id="managementPanel">
+      <h2>Management &amp; Upload</h2>
+
+      <!-- <div class="card">
+        <div class="card-eyebrow">Step 1</div>
+        <h3>Load sample menu</h3>
+        <p class="muted">Runs the full OCR-skip → allergen analyze → compliance verify → translate pipeline on the 8 sample dishes.</p>
+        <button id="seedBtn" class="btn primary">Load Sample Menu</button>
+        <div id="seedStatus" class="status-line"></div>
+      </div> -->
+
+      <div class="card">
+        <h3>Upload a menu file</h3>
+        <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+        <button id="uploadBtn" class="btn">Upload &amp; Process</button>
+        <div id="uploadProgress" class="progress-list"></div>
+      </div>
+
+      <div class="card">
+        <h3>Add a dish manually</h3>
+        <form id="manualForm">
+          <input type="text" id="dishName" placeholder="Dish name" required />
+          <textarea id="dishDesc" placeholder="Description / ingredients" rows="3" required></textarea>
+          <button type="submit" class="btn">Analyze &amp; Add</button>
+        </form>
+        <div id="manualStatus" class="status-line"></div>
+      </div>
+
+     
+    </section>
+
+    <!-- RIGHT PANEL: Live preview -->
+    <section class="panel right-panel">
+      <div class="preview-header">
+        <div>
+          <h2>Menu Highlights</h2>
+          <p class="muted preview-sub admin-only hidden">Click any dish to review or override its AI-detected allergens.</p>
+        </div>
+        <div class="filters" id="filters">
+          <label><input type="checkbox" value="Gluten-Free" /> Gluten-Free</label>
+          <label><input type="checkbox" value="Dairy-Free" /> Dairy-Free</label>
+          <label><input type="checkbox" value="Vegan (self-declared - verify manually)" /> Vegan</label>
+        </div>
+        <div class="preview-actions">
+          <button id="refreshBtn" class="btn small">Refresh</button>
+          <button id="clearBtn" class="btn small danger admin-only hidden">Clear dishes</button>
+        </div>
+      </div>
+      <div id="clearStatus" class="status-line admin-only hidden" aria-live="polite"></div>
+
+      <div id="dishGrid" class="dish-grid"></div>
+
+  
+      </div>
+    </section>
+  </main>
+
+  <!-- Edit / review modal -->
+  <div id="editModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <h3 id="modalTitle">Review dish</h3>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  </div> <!-- closes #mainApp -->
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw="
+    crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

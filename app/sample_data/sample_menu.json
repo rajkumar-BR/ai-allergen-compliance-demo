@@ -1,0 +1,38 @@
+{
+  "menu_id": "kiwi-cafe-queenstown",
+  "menu_name": "The Kiwi Cafe - Queenstown Waterfront - Weekly Specials",
+  "items": [
+    {
+      "name": "Aged Ribeye Steak with Herb Butter",
+      "description": "28-day aged ribeye steak grilled to order, topped with a herb and garlic butter, served with roasted potatoes and a red wine jus."
+    },
+    {
+      "name": "Creamy Seafood Chowder",
+      "description": "A rich chowder with salmon, prawns and clams in a cream and butter base, finished with fresh chives and served with toasted sourdough bread."
+    },
+    {
+      "name": "Wild Mushroom Risotto",
+      "description": "Arborio rice slow-cooked with wild mushrooms, white wine, vegetable stock and finished with parmesan and butter."
+    },
+    {
+      "name": "Peanut Satay Chicken Skewers",
+      "description": "Grilled chicken skewers served with a house-made peanut satay sauce, cucumber salad and jasmine rice."
+    },
+    {
+      "name": "Miso Glazed Salmon",
+      "description": "Pan-seared salmon fillet glazed with a miso and soy reduction, served with steamed edamame and sesame greens."
+    },
+    {
+      "name": "Kumara and Almond Salad",
+      "description": "Roasted kumara, rocket, toasted almonds and a citrus vinaigrette, topped with crumbled feta."
+    },
+    {
+      "name": "Classic Beef Burger",
+      "description": "Beef pattie, cheddar cheese, egg mayonnaise, lettuce and tomato relish in a toasted brioche bun, served with fries."
+    },
+    {
+      "name": "Vegan Buddha Bowl",
+      "description": "Quinoa, roasted vegetables, chickpeas, avocado and a tahini dressing. No animal products used."
+    }
+  ]
+}
