@@ -32,16 +32,18 @@ advisory statements.
 
 ## HTTP API
 
-Routes live in `app/application.py` and delegate to `services/allergen_service.py`.
-Both accept either `dish_name` or the legacy `name` field.
+Routes are served by the `allergen_api` Lambda function behind API Gateway
+(see `terraform/apigateway.tf` / `terraform/lambda.tf`) and delegate to
+`services/allergen_service.py`. Both accept either `dish_name` or the legacy
+`name` field.
 
 ```
-POST /api/allergens/extract
+POST /allergens/extract
   { "dish_name": "...", "description": "..." }
   -> { "dish_name": "...", "allergens": [
         {"name": "Cashew", "evidence": "cashew nuts", "status": "CONFIRMED", "confidence": 0.99}, ...] }
 
-POST /api/compliance/verify
+POST /compliance/verify
   { "dish_name": "...", "description": "...", "allergens": [ ...optional in-advance extraction... ] }
   -> { "dish_name": "...", "compliance": {
         "status": "COMPLIANT",
@@ -61,19 +63,21 @@ so the pipeline never hard-fails.
 
 ## Running & testing
 
-Local (deterministic path, no AWS):
+The live demo runs at the Amplify-hosted frontend, calling the deployed API
+Gateway endpoint directly - there is no local server. To call the API
+yourself, grab the base URL and hit it:
 
-```powershell
-$env:LOCAL_MODE = "true"
-cd app
-.\.venv\Scripts\python.exe application.py
-# then: Invoke-WebRequest http://localhost:8000/api/allergens/extract -Method POST -Body '{"dish_name":"...","description":"..."}' -ContentType 'application/json'
+```bash
+API_URL=$(terraform -chdir=terraform output -raw menu_api_invoke_url)
+curl -X POST "$API_URL/allergens/extract" \
+  -H "Content-Type: application/json" \
+  -d '{"dish_name":"...","description":"..."}'
 ```
 
-Real AWS path: set `LOCAL_MODE=false` (module default), set the per-service
-region variables (see `setup_aws_env.ps1`), and use valid IAM credentials in
-`~/.aws/credentials`. `BEDROCK_MODEL_ID` must be an inference-profile id such
-as `au.anthropic.claude-opus-4-6-v1` (a bare foundation-model id is rejected).
+`BEDROCK_MODEL_ID` (set via `terraform/terraform.tfvars`, see
+`variables.tf`) must be an inference-profile id such as
+`au.anthropic.claude-opus-4-6-v1` (a bare foundation-model id is rejected).
+Unit tests for the deterministic rules engine run with `python -m pytest tests/`.
 
 ## Regulatory sources
 
