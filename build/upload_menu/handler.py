@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import base64
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from email import message_from_bytes
 from email.message import Message
 from typing import Any, Dict, Optional, Tuple
@@ -106,19 +105,33 @@ def handler(event: Dict[str, Any], context: Any = None) -> Dict[str, Any]:
         return error(400, "multipart file field 'file' is required")
 
     file_bytes, filename, content_type = parsed
+    logger.info("upload_menu: parsed file_bytes=%d filename=%r content_type=%r", len(file_bytes), filename, content_type)
     if len(file_bytes) > MAX_UPLOAD_BYTES:
         return error(413, f"file exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)}MB upload limit")
 
     try:
+        logger.info("upload_menu: starting s3 upload")
         stored_path = s3_service.upload_raw_file(file_bytes, filename, content_type)
+        logger.info("upload_menu: s3 upload done, starting textract")
         lines = textract_service.extract_text_from_bytes(file_bytes, content_type)
+        logger.info("upload_menu: textract done, lines=%d", len(lines))
         dishes = menu_parser.parse_ocr_lines(lines)
+        logger.info("upload_menu: parsed dishes=%d", len(dishes))
 
-        with ThreadPoolExecutor() as executor:
-            analyzed = list(executor.map(
-                lambda d: pipeline_service.run_pipeline(menu_id, d["name"], d["description"], source="upload", persist=False),
-                [d for d in dishes if d["name"]],
-            ))
+        # Sequential, not concurrent: each dish makes two Bedrock calls
+        # (extract, then translate), and this account's on-demand Bedrock
+        # quota throttles even 3 concurrent Converse calls
+        # (ThrottlingException) - the retries that triggers inside
+        # bedrock_service then run out this function's 29s timeout before
+        # any dish finishes. dish_mutations' seed route processes its 8
+        # sample dishes the same way (a plain sequential loop) and
+        # comfortably fits the time budget; concurrency here bought no real
+        # throughput once every request is fighting the same rate limit
+        # anyway.
+        analyzed = [
+            pipeline_service.run_pipeline(menu_id, d["name"], d["description"], source="upload", persist=False)
+            for d in dishes if d["name"]
+        ]
 
         created = [dynamo_service.put_item(item) for item in analyzed]
     except Exception as exc:  # noqa: BLE001

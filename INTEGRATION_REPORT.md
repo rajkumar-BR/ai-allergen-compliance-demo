@@ -33,7 +33,8 @@ All seven share one Lambda Layer (`build/layer/`) built from `app/services/*.py`
 - ✅ Every route exercised directly (curl) against the live API — login, change-password + revert, manual dish add, delete, seed, PATCH edit (with and without auth, confirming 401 on the unauthenticated case), file upload with a real image through OCR.
 - ✅ Full browser UI flow (Playwright): cafe picker, cafe selection, admin login, manual add, allergen-filter checkbox toggling (confirmed discriminating correctly across combinations), change password + revert, clear dishes — zero console errors on the final pass.
 - ✅ Live Bedrock LLM output confirmed (`"llm_source": "bedrock"`, not the offline fallback) after the model-id fix below.
-- ✅ CI pipeline exercised end-to-end after each of the three bugs below was fixed.
+- ✅ CI pipeline exercised end-to-end after each of the bugs below was fixed.
+- ✅ A 4-dish test PDF uploaded through the full pipeline (S3 → Textract → parser → Bedrock extract/translate ×4) in 15.8s, well inside the 30s ceiling.
 
 ## Real Bugs Found and Fixed
 
@@ -44,6 +45,7 @@ All seven share one Lambda Layer (`build/layer/`) built from `app/services/*.py`
 | 3 | CI: `Not authorized to perform sts:AssumeRoleWithWebIdentity` | GitHub now sometimes issues "immutable ID" OIDC subject claims (`repo:owner@id/repo@id:ref:...`) instead of the classic format the IAM trust policy expected | Diagnosed via CloudTrail (`userIdentity.principalId`), added the immutable-ID pattern alongside the classic one |
 | 4 | CI: `failed to get shared config profile, default` | AWS provider's `profile = "default"` forced a literal named-profile lookup that doesn't exist on the GitHub Actions runner (OIDC credentials arrive as plain env vars, not a profile file) | `aws_profile` now defaults to `""`; provider passes `null` when empty, falling through to the standard credential chain |
 | 5 | CI: push to `main` rejected | A cached git credential on the dev machine lacked the `workflow` scope needed to update `.github/workflows/*.yml` | Pushed with an explicit PAT for that one commit; confirmed the token isn't persisted anywhere on disk afterward |
+| 6 | Upload timed out (bare 500, zero log output) on an 8-dish test PDF | `upload_menu` ran the per-dish pipeline through an uncapped `ThreadPoolExecutor`, firing every dish's Bedrock calls at once; this account's on-demand quota throttled them immediately, and the resulting retries ran out the time budget before any dish finished | Diagnostic logging isolated the hang to the Bedrock loop; switched to sequential processing. Even then, 8 dishes measured 26-29s against API Gateway's hard 30s ceiling - a real capacity limit, not a bug, so it's now documented (README, TDD) rather than "fixed" outright |
 
 ## Compatibility Notes
 

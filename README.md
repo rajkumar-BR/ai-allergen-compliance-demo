@@ -129,6 +129,7 @@ CI/CD (`.github/workflows/deploy.yml`) does steps 1–3 automatically on every p
 
 - **Single shared admin credential, no per-user auth.** One password (Secrets Manager, rotatable via the app's own "Change Password" action) guards every mutating route — not a Cognito/JWT-based per-user identity.
 - **Upload size capped at 4MB.** A synchronous Lambda invocation payload is capped at 6MB, and base64 inflates a file ~33% — a production version would upload straight to S3 via a presigned URL and process asynchronously.
+- **A menu with more than ~4-5 dishes may time out on upload.** `upload_menu` processes parsed dishes sequentially (each making two Bedrock calls), against API Gateway's hard, non-configurable 30-second integration timeout — measured at ~26-29s for 8 dishes with zero margin for a single throttling retry. The same limitation as the size cap above: a presigned-URL + async (S3-event-triggered) redesign removes it entirely, since there'd be no request/response round-trip to time out.
 - **CORS is wide open (`allow_origins = ["*"]`)** on the API Gateway HTTP API, to avoid a circular dependency on the not-yet-known Amplify domain at first `apply`. Fine for a public demo with header-based (not cookie-based) auth.
 - **The Bedrock Knowledge Base is opt-in**, off by default; RAG falls back to local `docs/*.md` search.
 - **Amplify has no connected git repository** in this demo — every frontend deploy is a manual (or CI-scripted) zip upload, not an Amplify-native build-on-push.
