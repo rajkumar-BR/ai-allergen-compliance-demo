@@ -41,9 +41,9 @@ variable "bedrock_embedding_model_arn" {
 }
 
 variable "aws_profile" {
-  description = "AWS CLI named profile to use for credentials. Set to \"default\" if you configured credentials without a named profile."
+  description = "AWS CLI named profile to use for credentials, e.g. \"personal\" for a local run. Leave as the empty-string default for CI or anywhere credentials come from plain AWS_* environment variables (GitHub Actions OIDC, an instance/task role) - a non-empty value here forces a literal named-profile lookup in ~/.aws/config, which fails outside a local dev machine."
   type        = string
-  default     = "default"
+  default     = ""
 }
 
 variable "app_admin_initial_password" {

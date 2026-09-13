@@ -43,6 +43,16 @@ terraform {
 }
 
 provider "aws" {
-  region  = var.aws_region
-  profile = var.aws_profile
+  region = var.aws_region
+  # A non-empty var.aws_profile forces the AWS SDK's shared-config loader to
+  # look up that EXACT named profile in ~/.aws/config, erroring out
+  # ("failed to get shared config profile, <name>") if it isn't there - which
+  # it never is in CI, where aws-actions/configure-aws-credentials exports
+  # OIDC-derived credentials as plain AWS_ACCESS_KEY_ID/SECRET/SESSION_TOKEN
+  # env vars, not a profile file. Passing `null` here (var.aws_profile's
+  # default is "") skips profile lookup entirely and falls through to the
+  # standard credential chain (env vars, then the "default" profile, then
+  # instance/task role) - the outcome local users setting a real profile
+  # name still want, and the only thing that works unmodified in CI too.
+  profile = var.aws_profile != "" ? var.aws_profile : null
 }

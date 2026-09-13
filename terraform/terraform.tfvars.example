@@ -1,8 +1,13 @@
 # Copy this file to terraform.tfvars and adjust as needed, then run
 # terraform init && terraform apply
 
-aws_region       = "ap-southeast-2"
-aws_profile      = "default"
+aws_region  = "ap-southeast-2"
+# Your local named AWS CLI profile (e.g. from `aws configure --profile personal`
+# or `aws sso login --profile personal`). Leave this UNSET (or delete the line)
+# for CI or anywhere credentials already come from plain AWS_* environment
+# variables - a non-empty value here forces a literal named-profile lookup in
+# ~/.aws/config, which fails outside a local dev machine (see variables.tf).
+aws_profile      = "personal"
 project_name     = "ai-allergen-compliance-demo"
 environment      = "dev"
 bedrock_model_id = "global.anthropic.claude-haiku-4-5-20251001-v1:0"

@@ -50,7 +50,10 @@ jobs:
 
       - name: Terraform plan
         working-directory: terraform
-        run: terraform plan -input=false -var="aws_profile=default"
+        # var.aws_profile defaults to "" (see variables.tf), so the provider
+        # falls through to the plain AWS_* env vars configure-aws-credentials
+        # just exported - no -var override needed or wanted here.
+        run: terraform plan -input=false
 
   deploy:
     if: github.event_name == 'push'
@@ -80,13 +83,10 @@ jobs:
 
       - name: Terraform apply
         working-directory: terraform
-        # aws_profile defaults to "default" in variables.tf, which is fine
-        # here: the "aws" provider block only uses var.aws_profile to pick a
-        # *named CLI profile*, and configure-aws-credentials above already
-        # exported the OIDC-derived credentials as plain AWS_* env vars,
-        # which every AWS SDK (including the provider) prefers over a named
-        # profile when both are present.
-        run: terraform apply -input=false -auto-approve -var="aws_profile=default"
+        # var.aws_profile defaults to "" (see variables.tf), so the provider
+        # falls through to the plain AWS_* env vars configure-aws-credentials
+        # just exported - no -var override needed or wanted here.
+        run: terraform apply -input=false -auto-approve
 
       - name: Wire the API URL into the frontend
         working-directory: terraform
