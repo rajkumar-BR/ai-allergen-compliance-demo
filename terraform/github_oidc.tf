@@ -54,10 +54,21 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
     # `terraform plan`); the workflow itself only ever runs `apply` when
     # triggered by a push to main (see deploy.yml's job-level `if:`), so a
     # feature-branch run assuming this role still can't mutate anything.
+    #
+    # GitHub now sometimes issues "immutable ID" subject claims -
+    # repo:<owner>@<owner_id>/<repo>@<repo_id>:ref:... instead of the classic
+    # repo:<owner>/<repo>:ref:... (added to prevent sub-claim reuse after an
+    # owner/repo rename) - confirmed via CloudTrail that this repo's runs
+    # actually send the immutable-ID form. Both patterns are listed so
+    # whichever one GitHub sends still matches; StringLike ORs a list of
+    # values for one condition key.
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:*"]
+      values = [
+        "repo:${var.github_repo}:*",       # classic: repo:owner/repo:ref:...
+        "repo:${replace(var.github_repo, "/", "@*/")}@*:*", # immutable-id: repo:owner@id/repo@id:ref:...
+      ]
     }
   }
 }
