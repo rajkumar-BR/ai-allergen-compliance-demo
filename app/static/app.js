@@ -496,12 +496,23 @@ document.getElementById("uploadBtn").addEventListener("click", async () => {
 // for the error handelling with simple message
 function simplifyError(err) {
   const msg = err.message || String(err);
+  const status = parseInt(msg.slice(0, 3), 10) || 0;
+
+  // A file that clears our own 4MB check can still be too large once
+  // base64-encoded: API Gateway rejects anything over 10MB before the
+  // request ever reaches our Lambda code, as its own {"message": "..."}
+  // error - a different shape from our app's {"error": "..."}, so it needs
+  // its own friendly message rather than falling through to a generic one.
+  if (status === 413) {
+    return "That file is too large to upload. Please use an image under 4MB — try compressing the photo or taking it at a lower resolution.";
+  }
 
   const jsonMatch = msg.match(/\{.*\}/s);
   if (jsonMatch) {
     try {
       const parsed = JSON.parse(jsonMatch[0]);
       if (parsed.error) return parsed.error;
+      if (parsed.message) return parsed.message;
     } catch (_) { /* not JSON, fall through */ }
   }
 
@@ -512,8 +523,11 @@ function simplifyError(err) {
     return "Something went wrong on the server. Please try again.";
   }
 
-  if (msg.startsWith("401")) return "You need to log in as admin first.";
-  if (msg.startsWith("404")) return "Not found.";
-  if (msg.startsWith("500")) return "Something went wrong on the server. Please try again.";
+  if (status === 401) return "You need to log in as admin first.";
+  if (status === 404) return "Not found.";
+  if (status === 500) return "Something went wrong on the server. Please try again.";
+  if (status === 502 || status === 503 || status === 504) {
+    return "The request took too long or the service is temporarily unavailable — this can happen with larger files or several dishes at once. Please try again, or upload a smaller menu.";
+  }
   return "Something went wrong. Please try again.";
 }
