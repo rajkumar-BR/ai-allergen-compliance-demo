@@ -507,13 +507,15 @@ function simplifyError(err) {
     return "That file is too large to upload. Please use an image under 4MB — try compressing the photo or taking it at a lower resolution.";
   }
 
+  // Our own backend's {"error": "..."} shape is always specific and safe to
+  // show verbatim - trust it unconditionally, before any status-code guess.
   const jsonMatch = msg.match(/\{.*\}/s);
+  let parsed = null;
   if (jsonMatch) {
     try {
-      const parsed = JSON.parse(jsonMatch[0]);
+      parsed = JSON.parse(jsonMatch[0]);
       if (parsed.error) return parsed.error;
-      if (parsed.message) return parsed.message;
-    } catch (_) { /* not JSON, fall through */ }
+    } catch (_) { parsed = null; /* not JSON, fall through */ }
   }
 
   if (msg.includes("<!doctype html>") || msg.includes("Werkzeug Debugger")) {
@@ -525,9 +527,18 @@ function simplifyError(err) {
 
   if (status === 401) return "You need to log in as admin first.";
   if (status === 404) return "Not found.";
-  if (status === 500) return "Something went wrong on the server. Please try again.";
+  if (status === 500) {
+    // A hard Lambda crash or a full timeout both surface here as a plain
+    // 500. API Gateway's own body ({"message": "Internal server error"})
+    // is real but unhelpful, so a specific, actionable message beats
+    // passing that raw text through to the user.
+    return "The request took too long or the server hit an error — this can happen with larger files or several dishes at once. Please try again, or upload a smaller menu.";
+  }
   if (status === 502 || status === 503 || status === 504) {
     return "The request took too long or the service is temporarily unavailable — this can happen with larger files or several dishes at once. Please try again, or upload a smaller menu.";
   }
+  // Last resort: API Gateway's own {"message": "..."} shape for anything
+  // not already handled above (e.g. a genuinely unexpected status code).
+  if (parsed && parsed.message) return parsed.message;
   return "Something went wrong. Please try again.";
 }
