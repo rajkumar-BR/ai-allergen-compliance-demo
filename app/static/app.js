@@ -448,13 +448,21 @@ async function prepareUploadFile(file) {
 }
 
 document.getElementById("uploadBtn").addEventListener("click", async () => {
+  const uploadBtn = document.getElementById("uploadBtn");
   const fileInput = document.getElementById("fileInput");
   const progress = document.getElementById("uploadProgress");
+  if (uploadBtn.disabled) return; // already processing - ignore a repeat click
   if (!fileInput.files.length) {
     progress.innerHTML = `<div>Select a file first.</div>`;
     return;
   }
 
+  // A single upload can take 5-20+ seconds (OCR + per-dish Bedrock calls), with
+  // only a small spinner as feedback - disable the button for the duration so a
+  // second click (easy to do while waiting) can't fire a duplicate upload. Every
+  // dish gets a fresh random item_id with no dedup, so a duplicate request means
+  // duplicate dishes, not a harmless no-op.
+  uploadBtn.disabled = true;
   progress.innerHTML = `<span class="spinner"></span> Processing...`;
 
   const formData = new FormData();
@@ -469,6 +477,8 @@ document.getElementById("uploadBtn").addEventListener("click", async () => {
     await loadItems();
   } catch (err) {
     progress.innerHTML = `<span class="error-line">${simplifyError(err)}</span>`;
+  } finally {
+    uploadBtn.disabled = false;
   }
 });
 
