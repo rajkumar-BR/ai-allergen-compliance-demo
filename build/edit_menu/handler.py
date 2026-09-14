@@ -206,7 +206,11 @@ def recompute_allergen_fields(confirmed_allergens: Any) -> Dict[str, Any]:
 
     - ``confirmed`` — the proposed allergens intersected with ``PEAL_CATEGORIES`` (R4.1);
     - ``display_tags`` — the *real* ``allergen_rules.to_display_tags(confirmed)`` (R4.2);
-    - ``diet_tags`` — the *real* ``allergen_rules.derive_diet_tags(confirmed)`` (R4.2).
+    - ``diet_tags`` — the *real* ``allergen_rules.derive_diet_tags(confirmed)`` (R4.2);
+    - ``disagreements`` — reset to empty: a human confirming the allergen list *is* the
+      resolution of whatever AI-vs-rules-engine mismatch prompted the review, so the
+      stored disagreement record must not keep flagging "needs review" after this
+      correction is saved (otherwise the frontend's badge never clears).
 
     Both tag lists come straight from the shared, unmodified ``allergen_rules`` module — no
     reimplementation (R4.6). Task 3.3 persists these into ``allergens.confirmed`` /
@@ -218,6 +222,7 @@ def recompute_allergen_fields(confirmed_allergens: Any) -> Dict[str, Any]:
         "confirmed": confirmed,
         "display_tags": allergen_rules.to_display_tags(confirmed),
         "diet_tags": allergen_rules.derive_diet_tags(confirmed),
+        "disagreements": {"llm_only": [], "rule_only": [], "rag_only": []},
     }
 
 
@@ -355,12 +360,18 @@ def build_update_item_kwargs(
         expr_names["#allergens"] = "allergens"
         expr_names["#confirmed"] = "confirmed"
         expr_names["#display_tags"] = "display_tags"
+        expr_names["#disagreements"] = "disagreements"
         expr_values[":confirmed"] = allergen_fields["confirmed"]
         expr_values[":display_tags"] = allergen_fields["display_tags"]
         expr_values[":diet_tags"] = allergen_fields["diet_tags"]
+        expr_values[":disagreements"] = allergen_fields["disagreements"]
         set_clauses.append("#allergens.#confirmed = :confirmed")
         set_clauses.append("#allergens.#display_tags = :display_tags")
         set_clauses.append("diet_tags = :diet_tags")
+        # A human confirming the allergen list resolves whatever AI-vs-rules-engine
+        # mismatch prompted the review - clear it so the "needs review" badge (driven
+        # purely by this field on the frontend) doesn't stay stuck on after saving.
+        set_clauses.append("#allergens.#disagreements = :disagreements")
 
     # --- optional name / description (validated in task 3.1) ----------------------------
     if "name" in correction:
